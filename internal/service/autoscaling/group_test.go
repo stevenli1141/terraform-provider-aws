@@ -5216,7 +5216,7 @@ func TestPutWarmPoolInput(t *testing.T) {
 			},
 		},
 		{
-			name: "all values",
+			name: "all except instance reuse policy",
 			input: []interface{}{map[string]interface{}{
 				"pool_state":                  "Stopped",
 				"min_size":                    3,
@@ -5227,6 +5227,26 @@ func TestPutWarmPoolInput(t *testing.T) {
 				PoolState:                aws.String("Stopped"),
 				MinSize:                  aws.Int64(3),
 				MaxGroupPreparedCapacity: aws.Int64(2),
+			},
+		},
+		{
+			name: "all values",
+			input: []interface{}{map[string]interface{}{
+				"pool_state":                  "Stopped",
+				"min_size":                    3,
+				"max_group_prepared_capacity": 2,
+				"instance_reuse_policy": []interface{}{map[string]interface{}{
+					"reuse_on_scale_in": true,
+				}},
+			}},
+			expected: &autoscaling.PutWarmPoolInput{
+				AutoScalingGroupName:     aws.String(asgName),
+				PoolState:                aws.String("Stopped"),
+				MinSize:                  aws.Int64(3),
+				MaxGroupPreparedCapacity: aws.Int64(2),
+				InstanceReusePolicy: &autoscaling.InstanceReusePolicy{
+					ReuseOnScaleIn: aws.Bool(true),
+				},
 			},
 		},
 	}
@@ -5262,6 +5282,7 @@ func TestFlattenWarmPoolConfiguration(t *testing.T) {
 				"pool_state":                  "Stopped",
 				"min_size":                    int64(0),
 				"max_group_prepared_capacity": int64(-1),
+				"instance_reuse_policy":       []interface{}{},
 			}},
 		},
 		{
@@ -5274,10 +5295,11 @@ func TestFlattenWarmPoolConfiguration(t *testing.T) {
 				"pool_state":                  "Stopped",
 				"min_size":                    int64(0),
 				"max_group_prepared_capacity": int64(2),
+				"instance_reuse_policy":       []interface{}{},
 			}},
 		},
 		{
-			name: "all values",
+			name: "all except instance reuse policy",
 			input: &autoscaling.WarmPoolConfiguration{
 				PoolState:                aws.String("Stopped"),
 				MinSize:                  aws.Int64(3),
@@ -5287,6 +5309,26 @@ func TestFlattenWarmPoolConfiguration(t *testing.T) {
 				"pool_state":                  "Stopped",
 				"min_size":                    int64(3),
 				"max_group_prepared_capacity": int64(5),
+				"instance_reuse_policy":       []interface{}{},
+			}},
+		},
+		{
+			name: "all values",
+			input: &autoscaling.WarmPoolConfiguration{
+				PoolState:                aws.String("Stopped"),
+				MinSize:                  aws.Int64(3),
+				MaxGroupPreparedCapacity: aws.Int64(5),
+				InstanceReusePolicy: &autoscaling.InstanceReusePolicy{
+					ReuseOnScaleIn: aws.Bool(true),
+				},
+			},
+			expected: []interface{}{map[string]interface{}{
+				"pool_state":                  "Stopped",
+				"min_size":                    int64(3),
+				"max_group_prepared_capacity": int64(5),
+				"instance_reuse_policy": []interface{}{map[string]interface{}{
+					"reuse_on_scale_in": true,
+				}},
 			}},
 		},
 	}

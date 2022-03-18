@@ -591,6 +591,20 @@ func ResourceGroup() *schema.Resource {
 							Optional: true,
 							Default:  -1,
 						},
+						"instance_reuse_policy": {
+							Type:     schema.TypeList,
+							Optional: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"reuse_on_scale_in": {
+										Type:     schema.TypeBool,
+										Optional: true,
+										Default:  false,
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -2097,8 +2111,20 @@ func FlattenWarmPoolConfiguration(warmPoolConfiguration *autoscaling.WarmPoolCon
 		"pool_state":                  aws.StringValue(warmPoolConfiguration.PoolState),
 		"min_size":                    aws.Int64Value(warmPoolConfiguration.MinSize),
 		"max_group_prepared_capacity": maxGroupPreparedCapacity,
+		"instance_reuse_policy":       flattenInstanceReusePolicy(warmPoolConfiguration.InstanceReusePolicy),
 	}
 
+	return []interface{}{m}
+}
+
+func flattenInstanceReusePolicy(irp *autoscaling.InstanceReusePolicy) []interface{} {
+	if irp == nil {
+		return []interface{}{}
+	}
+	m := map[string]interface{}{}
+	if irp.ReuseOnScaleIn != nil {
+		m["reuse_on_scale_in"] = aws.BoolValue(irp.ReuseOnScaleIn)
+	}
 	return []interface{}{m}
 }
 
@@ -2195,6 +2221,14 @@ func CreatePutWarmPoolInput(asgName string, l []interface{}) *autoscaling.PutWar
 
 	if v, ok := m["max_group_prepared_capacity"]; ok && v.(int) > -2 {
 		input.MaxGroupPreparedCapacity = aws.Int64(int64(v.(int)))
+	}
+
+	if v, ok := m["instance_reuse_policy"]; ok && v != nil && len(v.([]interface{})) > 0 {
+		irp := v.([]interface{})[0].(map[string]interface{})
+		input.InstanceReusePolicy = &autoscaling.InstanceReusePolicy{}
+		if w, ok := irp["reuse_on_scale_in"]; ok {
+			input.InstanceReusePolicy.ReuseOnScaleIn = aws.Bool(w.(bool))
+		}
 	}
 
 	return &input

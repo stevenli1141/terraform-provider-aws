@@ -1128,6 +1128,17 @@ func TestAccAutoScalingGroup_warmPool(t *testing.T) {
 				),
 			},
 			{
+				Config: testAccGroupConfig_WarmPool_With_IRP(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckGroupExists(resourceName, &group),
+					resource.TestCheckResourceAttr(resourceName, "warm_pool.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "warm_pool.0.pool_state", "Stopped"),
+					resource.TestCheckResourceAttr(resourceName, "warm_pool.0.min_size", "0"),
+					resource.TestCheckResourceAttr(resourceName, "warm_pool.0.max_group_prepared_capacity", "2"),
+					resource.TestCheckResourceAttr(resourceName, "warm_pool.0.instance_reuse_policy.0.reuse_on_scale_in", "true"),
+				),
+			},
+			{
 				Config: testAccGroupConfig_WarmPool_Remove(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGroupExists(resourceName, &group),
@@ -4754,7 +4765,7 @@ data "aws_availability_zones" "current" {
 
 resource "aws_launch_configuration" "test" {
   image_id      = data.aws_ami.test.id
-  instance_type = "t3.nano"
+  instance_type = "t2.micro"
 }
 `
 }
@@ -4786,6 +4797,27 @@ resource "aws_autoscaling_group" "test" {
     pool_state                  = "Stopped"
     min_size                    = 0
     max_group_prepared_capacity = 2
+  }
+}
+`
+}
+
+func testAccGroupConfig_WarmPool_With_IRP() string {
+	return testAccGroupConfig_WarmPool_Base() + `
+resource "aws_autoscaling_group" "test" {
+  availability_zones   = [data.aws_availability_zones.current.names[0]]
+  max_size             = 5
+  min_size             = 1
+  desired_capacity     = 1
+  launch_configuration = aws_launch_configuration.test.name
+
+  warm_pool {
+    pool_state                  = "Stopped"
+    min_size                    = 0
+    max_group_prepared_capacity = 2
+	instance_reuse_policy {
+	  reuse_on_scale_in = true
+	}
   }
 }
 `

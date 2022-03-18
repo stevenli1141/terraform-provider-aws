@@ -328,6 +328,9 @@ resource "aws_autoscaling_group" "example" {
     pool_state                  = "Stopped"
     min_size                    = 1
     max_group_prepared_capacity = 10
+    instance_reuse_policy {
+      reuse_on_scale_in = true
+    }
   }
 }
 ```
@@ -496,6 +499,8 @@ This configuration block supports the following:
 * `pool_state` - (Optional) Sets the instance state to transition to after the lifecycle hooks finish. Valid values are: Stopped (default) or Running.
 * `min_size` - (Optional) Specifies the minimum number of instances to maintain in the warm pool. This helps you to ensure that there is always a certain number of warmed instances available to handle traffic spikes. Defaults to 0 if not specified.
 * `max_group_prepared_capacity` - (Optional) Specifies the total maximum number of instances that are allowed to be in the warm pool or in any state except Terminated for the Auto Scaling group.
+* `instance_reuse_policy` - (Optional) Indicates whether instances in the Auto Scaling group can be returned to the warm pool on scale in. The default is to terminate instances in the Auto Scaling group when the group scales in.
+    * `reuse_on_scale_in` - (Optional) Specifies whether instances in the Auto Scaling group can be returned to the warm pool on scale in. Defaults to false.
 
 ## Attributes Reference
 
